@@ -1,4 +1,4 @@
-# Gabagool AI
+# Polymarket trading bot - copy  trading bot Gabagool AI
 
 **Short-horizon prediction for Polymarket crypto markets.** Predict whether the UP contract price will rise by ~$0.01–0.02 within 5 seconds, then train an ML model on real-time order book and spot data to drive a trading bot.
 
