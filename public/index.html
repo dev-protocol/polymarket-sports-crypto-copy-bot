@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Polymarket Copy-trade bot</title>
+  <link rel="stylesheet" href="/index.css" />
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">Loading</span>
+    </div>
+  </div>
+  <div class="alert-overlay" id="alertOverlay" role="alertdialog" aria-modal="true" aria-labelledby="alertMessage">
+    <div class="alert-dialog" id="alertDialog">
+      <p class="alert-title" id="alertTitle"></p>
+      <p class="alert-message" id="alertMessage"></p>
+      <button type="button" class="alert-ok" id="alertOk">OK</button>
+    </div>
+  </div>
+  <header class="app-header">
+    <div class="app-header-track">
+      <div class="app-header-array">
+        <span class="app-header-cell">Polymarket copy trade</span>
+        <span class="app-header-cell">bot stream live</span>
+        <span class="app-header-cell">activity stream</span>
+        <span class="app-header-cell">wallet</span>
+      </div>
+      <div class="app-header-array">
+        <span class="app-header-cell">Polymarket copy trade</span>
+        <span class="app-header-cell">bot stream live</span>
+        <span class="app-header-cell">activity stream</span>
+        <span class="app-header-cell">wallet</span>
+      </div>
+      <div class="app-header-array">
+        <span class="app-header-cell">Polymarket copy trade</span>
+        <span class="app-header-cell">bot stream live</span>
+        <span class="app-header-cell">activity stream</span>
+        <span class="app-header-cell">wallet</span>
+      </div>
+    </div>
+  </header>
+  <div class="title-row">
+    <h1>Polymarket Copy-trade bot</h1>
+    <div class="social-links">
+      <a href="https://t.me/kei4650" rel="noopener noreferrer" class="social-link" title="Telegram" aria-label="Telegram" data-external>
+        <svg class="social-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      </a>
+      <a href="https://x.com/kei4650" rel="noopener noreferrer" class="social-link" title="X" aria-label="X" data-external>
+        <svg class="social-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+    </div>
+  </div>
+  <div class="control-panel">
+    <div class="activities-side">
+      <div class="activities-wrapper">
+        <div class="activities-column activities-column--main">
+          <h3 class="activities-heading">Activities</h3>
+          <div class="list" id="list"></div>
+        </div>
+        <div class="activities-column activities-column--my">
+          <h3 class="activities-heading">My activities</h3>
+          <div class="list list-my" id="listMy"></div>
+        </div>
+      </div>
+    </div>
+    <div class="control-panel-right">
+      <div class="info-text-wrapper">
+        <p class="meta info-text" id="status">📌 Click Start to run. 🔑 Use PRIVATE_KEY in env for signing.</p>
+        <p class="meta info-text" id="targetAddressLine">Following: —</p>
+        <p class="meta info-text" id="allowanceLine"></p>
+      </div>
+      <div class="balances-row meta" id="balancesRow">
+        <span id="polygonBalance">POL: —</span>
+        <span id="usdcBalance">USDC.e: —</span>
+        <span id="usdcNativeBalance">USDC: —</span>
+        <button type="button" id="refreshBalancesBtn" class="btn-refresh-balances" title="Fetch latest balances">Refresh</button>
+      </div>
+      <div class="controls controls-buttons">
+        <button type="button" id="startBtn">Start</button>
+        <button type="button" id="stopBtn">Stop</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function() {
+      var overlay = document.getElementById('loadingOverlay');
+      var img = new Image();
+      var done = function() {
+        if (overlay && !overlay.classList.contains('loaded')) {
+          overlay.classList.add('loaded');
+          setTimeout(function() {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+          }, 350);
+        }
+      };
+      img.onload = done;
+      img.onerror = done;
+      setTimeout(done, 8000);
+      img.src = '/Screenshot_2.png?v=1';
+    })();
+    const list = document.getElementById('list');
+    const listMy = document.getElementById('listMy');
+    const status = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const alertOverlay = document.getElementById('alertOverlay');
+    const alertMessage = document.getElementById('alertMessage');
+    const alertOk = document.getElementById('alertOk');
+    /** UI buffer size: max activity rows shown (Activities + My activities). */
+    const MAX_ROWS = 50;
+    let receivedTrades = [];
+    let myActivities = [];
+    let eventSource = null;
+    let streamEventCount = 0;
+    function showCustomAlert(message, isWarning) {
+      alertMessage.textContent = message;
+      var titleEl = document.getElementById('alertTitle');
+      var dialogEl = document.getElementById('alertDialog');
+      if (isWarning && titleEl && dialogEl) {
+        titleEl.textContent = 'Warning';
+        titleEl.style.display = '';
+        dialogEl.classList.add('alert-dialog--warning');
+      } else {
+        if (titleEl) titleEl.style.display = 'none';
+        if (dialogEl) dialogEl.classList.remove('alert-dialog--warning');
+      }
+      alertOverlay.classList.add('alert-open');
+      alertOk.focus();
+    }
+    function closeCustomAlert() {
+      alertOverlay.classList.remove('alert-open');
+    }
+    alertOk.onclick = function() { closeCustomAlert(); startBtn && startBtn.focus(); };
+    alertOverlay.onclick = function(e) { var clicked = e.target; if (clicked === alertOverlay) closeCustomAlert(); };
+    var targetAddressEl = document.getElementById('targetAddressLine');
+    function loadConfig() {
+      fetch('/api/config').then(function(r) { return r.ok ? r.json() : null; }).then(function(c) {
+        if (c) {
+          if (!c.hasPrivateKey) showCustomAlert('Input private key to .env file', true);
+          if (targetAddressEl) {
+            var addr = c.targetAddress;
+            if (addr) {
+              var short = addr.length > 14 ? addr.slice(0, 6) + '…' + addr.slice(-6) : addr;
+              targetAddressEl.textContent = 'Following: ' + short;
+              targetAddressEl.title = addr;
+            } else targetAddressEl.textContent = 'Following: — (set TARGET_ADDRESS in .env)';
+          }
+          var allowanceEl = document.getElementById('allowanceLine');
+          if (allowanceEl) {
+            var as = c.allowanceStatus;
+            if (as === 'ok') allowanceEl.textContent = '✅ Allowances: set (USDC.e + CTF)';
+            else if (as === 'pending') allowanceEl.textContent = '⏳ Allowances: setting…';
+            else allowanceEl.textContent = 'Allowances: run when you Start or refresh';
+          }
+          if (c.allowanceError) showCustomAlert(c.allowanceError, true);
+        }
+      }).catch(function() {});
+    }
+    function loadBalances() {
+      fetch('/api/balances?t=' + Date.now()).then(function(r) { return r.ok ? r.json() : null; }).then(function(b) {
+        if (!b) return;
+        var polygonEl = document.getElementById('polygonBalance');
+        var usdcEl = document.getElementById('usdcBalance');
+        var usdcNatEl = document.getElementById('usdcNativeBalance');
+        if (b.error && b.polygonBalance == null && b.usdcBalance == null) {
+          if (polygonEl) polygonEl.textContent = 'POL: —';
+          if (usdcEl) usdcEl.textContent = 'USDC.e: —';
+          if (usdcNatEl) usdcNatEl.textContent = 'USDC: —';
+          return;
+        }
+        if (polygonEl) polygonEl.textContent = 'POL: ' + (b.polygonBalance != null ? formatBalance(b.polygonBalance) : '—');
+        if (usdcEl) usdcEl.textContent = 'USDC.e: ' + (b.usdcBalance != null ? formatBalance(b.usdcBalance) : '—');
+        if (usdcNatEl) usdcNatEl.textContent = 'USDC: ' + (b.usdcNativeBalance != null ? formatBalance(b.usdcNativeBalance) : '—');
+      }).catch(function() {});
+    }
+    function formatBalance(s) {
+      if (s == null || s === '') return '—';
+      var str = String(s).trim();
+      if (!str) return '—';
+      var n = parseFloat(str, 10);
+      if (isNaN(n)) return '—';
+      if (n >= 1e9) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+      if (n >= 1e6) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+      if (n >= 1) return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      if (n >= 0.0001) return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 6 });
+      if (n > 0) return n.toExponential(2);
+      return '0';
+    }
+    loadConfig();
+    loadBalances();
+    var refreshBalancesBtn = document.getElementById('refreshBalancesBtn');
+    if (refreshBalancesBtn) refreshBalancesBtn.addEventListener('click', loadBalances);;
+    function fmt2(n) {
+      var x = Number(n);
+      return n != null && n !== '' && !isNaN(x) ? x.toFixed(2) : (n ?? '');
+    }
+    function fmtTime(ts) {
+      if (ts == null || ts === '') return '—';
+      var n = Number(ts);
+      if (!isFinite(n)) return '—';
+      var ms = n < 1e12 ? n * 1000 : n;
+      var d = new Date(ms);
+      return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    function outcomeLabel(t) {
+      var idx = Number(t.outcomeIndex);
+      if (t.outcome && (t.outcome === 'Yes' || t.outcome === 'No')) return t.outcome === 'Yes' ? 'UP' : 'DOWN';
+      return idx === 0 ? 'UP' : (idx === 1 ? 'DOWN' : (t.outcome || '—'));
+    }
+    function getSlugIcon(slugText) {
+      if (!slugText || typeof slugText !== 'string') return null;
+      var s = slugText.toLowerCase();
+      if (s.indexOf('btc') !== -1) return '/btc-15.png';
+      if (s.indexOf('eth') !== -1) return '/eth-15.png';
+      if (s.indexOf('sol') !== -1) return '/sol-15.png';
+      if (s.indexOf('xrp') !== -1) return '/xrp-15.png';
+      return null;
+    }
+    function rowHtml(t) {
+      var slug = (t.slug || t.title || '—');
+      var upDown = outcomeLabel(t);
+      var icon = getSlugIcon(t.slug || t.title || t.eventSlug || '');
+      var slugContent = (icon ? '<img class="slug-icon" src="' + icon + '" alt="" />' : '') + slug;
+      return '<span class="side ' + (t.side || '') + '">' + (t.side || '') + '</span>' +
+        '<span class="outcome ' + upDown + '">' + upDown + '</span>' +
+        '<span class="slug" title="' + (t.slug || '') + '">' + slugContent + '</span>' +
+        '<span class="price-size">' + fmt2(t.price) + ' × ' + fmt2(t.size) + '</span>' +
+        '<span class="row-time" title="' + (t.timestamp ? new Date((t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp)).toISOString() : '') + '">' + fmtTime(t.timestamp) + '</span>';
+    }
+    function outcomeLabelMy(m) {
+      if (m.outcome === 'UP' || m.outcome === 'DOWN') return m.outcome;
+      var idx = Number(m.outcomeIndex);
+      return idx === 0 ? 'UP' : (idx === 1 ? 'DOWN' : '—');
+    }
+    function rowHtmlMy(m) {
+      var upDown = outcomeLabelMy(m);
+      var ts = m.ts != null ? m.ts : '';
+      var timeTitle = ts ? new Date(ts).toISOString() : '';
+      var slugText = m.slug || m.title || '—';
+      var icon = getSlugIcon(m.slug || m.title || '');
+      var slugContent = (icon ? '<img class="slug-icon" src="' + icon + '" alt="" />' : '') + slugText;
+      return '<span class="side ' + (m.side || '') + '">' + (m.side || '') + '</span>' +
+        '<span class="outcome ' + upDown + '">' + upDown + '</span>' +
+        '<span class="slug" title="' + (m.slug || '') + '">' + slugContent + '</span>' +
+        '<span class="price-size">' + fmt2(m.price) + ' × ' + fmt2(m.copySize) + '</span>' +
+        '<span class="row-time" title="' + timeTitle + '">' + fmtTime(ts) + '</span>' +
+        '<span class="wallet">' + (m.orderID ? m.orderID.slice(0, 8) + '…' : (m.error || '—')) + '</span>';
+    }
+    function prependActivityRow(t) {
+      if (!list) return;
+      var emptyEl = list.querySelector('.list-empty-msg');
+      if (emptyEl) emptyEl.remove();
+      var row = document.createElement('div');
+      row.className = 'row row--activity row--new';
+      row.innerHTML = rowHtml(t);
+      list.insertBefore(row, list.firstChild);
+      if (receivedTrades.length > MAX_ROWS) {
+        receivedTrades.pop();
+        if (list.lastChild) list.removeChild(list.lastChild);
+      }
+      requestAnimationFrame(function() {
+        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+      setTimeout(function() { row.classList.remove('row--new'); }, 1200);
+    }
+    function render() {
+      const toShow = receivedTrades;
+      list.innerHTML = '';
+      if (toShow.length === 0) {
+        var emptyRow = document.createElement('div');
+        emptyRow.className = 'list-empty-msg';
+        emptyRow.textContent = eventSource ? 'No activities yet. Waiting for trades…' : 'Click Start to stream activities.';
+        list.appendChild(emptyRow);
+        return;
+      }
+      toShow.slice(0, MAX_ROWS).forEach(function(t) {
+        const row = document.createElement('div');
+        row.className = 'row row--activity';
+        row.innerHTML = rowHtml(t);
+        list.appendChild(row);
+      });
+    }
+    function renderMy() {
+      listMy.innerHTML = '';
+      myActivities.slice(0, MAX_ROWS).forEach(function(m) {
+        const row = document.createElement('div');
+        row.className = 'row row--activity row--my';
+        row.innerHTML = rowHtmlMy(m);
+        listMy.appendChild(row);
+      });
+    }
+    function doStart(ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); if (!ev.isTrusted) return; }
+      if (eventSource) return;
+      status.textContent = 'Checking config…';
+      fetch('/api/config')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(config) {
+          if (config && !config.hasPrivateKey) {
+            showCustomAlert('Set PRIVATE_KEY in env for signing.');
+            status.textContent = 'Click Start to run. Use PRIVATE_KEY in env for signing.';
+            return;
+          }
+          return fetch('/api/config', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sizePercent: 100 }) })
+            .then(function() { return config; });
+        })
+        .then(function() {
+          status.textContent = 'Connecting…';
+          return fetch('/api/activity/stream/allow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Stream-Request': 'start' },
+            body: JSON.stringify({})
+          });
+        })
+        .then(function(r) {
+          if (!r.ok) {
+            return r.json().catch(function() { return {}; }).then(function(data) {
+              showCustomAlert(data.message || data.error || 'Failed to start stream.');
+              status.textContent = 'Click Start to run. Use PRIVATE_KEY in env for signing.';
+              throw new Error('stream/allow failed');
+            });
+          }
+          return r.json();
+        })
+        .then(function(data) {
+          var token = data && data.token;
+          if (!token) { status.textContent = 'Failed to get token.'; return; }
+          if (data.allowanceError) showCustomAlert(data.allowanceError, true);
+          eventSource = new EventSource('/api/activity/stream?token=' + encodeURIComponent(token));
+          eventSource.onopen = function() {
+            streamEventCount = 0;
+            status.textContent = 'Bot is running. Showing trades (100% of size). • live';
+            render();
+          };
+          eventSource.onerror = function() {
+            if (eventSource && eventSource.readyState === 2) status.textContent = 'Stream error or not allowed.';
+            else status.textContent = 'Stream error (reconnecting…).';
+          };
+          eventSource.onmessage = function(e) {
+            try {
+              if (!e || !e.data) return;
+              /* One SSE event = one message; process every message, show one row. */
+              var data = JSON.parse(e.data);
+              if (!data || typeof data !== 'object') return;
+              streamEventCount++;
+              if (data.type === 'my' && data.data) {
+                myActivities.unshift(data.data);
+                if (myActivities.length > MAX_ROWS) myActivities.pop();
+                renderMy();
+              } else {
+                receivedTrades.unshift(data);
+                prependActivityRow(data);
+              }
+              if (status && eventSource) status.textContent = 'Bot is running. Showing trades (100% of size). • ' + streamEventCount + ' events';
+            } catch (err) { /* ignore malformed SSE */ }
+          };
+          if (startBtn) startBtn.disabled = true;
+          if (stopBtn) stopBtn.disabled = false;
+        })
+        .catch(function(err) { if (err && err.message !== 'stream/allow failed') status.textContent = 'Failed to connect.'; });
+    }
+    function doStop(ev) {
+      if (ev && !ev.isTrusted) return;
+      if (eventSource) { eventSource.close(); eventSource = null; }
+      if (startBtn) startBtn.disabled = false;
+      if (stopBtn) stopBtn.disabled = true;
+      status.textContent = 'Stopped. Click Start to begin again.';
+      render();
+    }
+    if (startBtn) { startBtn.addEventListener('click', doStart); startBtn.disabled = false; }
+    if (stopBtn) { stopBtn.addEventListener('click', doStop); stopBtn.disabled = true; }
+    document.body.addEventListener('click', function(e) {
+      var clickedEl = e.target;
+      var link = clickedEl && clickedEl.closest ? clickedEl.closest('a[data-external]') : null;
+      if (link) { e.preventDefault(); window.open(link.href, '_blank', 'noopener,noreferrer'); }
+    });
+    render();
+  </script>
+</body>
+</html>

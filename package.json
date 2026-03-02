@@ -1,0 +1,31 @@
+{
+  "name": "polymarket-copy-trade-bot-ts",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Polymarket copy trade bot",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && nodemon dist/index.js",
+    "dev": "tsc && nodemon  dist/index.js",
+    "dev:watch": "nodemon --watch src --ext ts --exec \"npm run build && node dist/index.js\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@polymarket/clob-client": "^5.3.0",
+    "dotenv": "^17.3.1",
+    "ethers": "^5.8.0",
+    "express": "^5.2.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.1",
+    "@types/ws": "^8.5.10",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
