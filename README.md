@@ -1,6 +1,6 @@
 # Polymarket Copy-trade Bot
 
-![s](s.gif)
+![Polymarket Copy-trade bot](public/s.gif)
 
 Express backend + HTML frontend. Streams activity via RTDS and places copy orders using the Polymarket CLOB API.
 
