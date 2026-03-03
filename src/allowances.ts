@@ -4,19 +4,7 @@
  */
 import { Wallet, Contract, ethers } from "ethers";
 
-const USDC_E = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
-const CTF = "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045";
-const CTF_EXCHANGE = "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E";
-const NEG_RISK_CTF_EXCHANGE = "0xC5d563A36AE78145C45a50134d48A1215220f80a";
 
-const ERC20_ABI = [
-  "function allowance(address owner, address spender) view returns (uint256)",
-  "function approve(address spender, uint256 amount) returns (bool)",
-];
-const ERC1155_ABI = [
-  "function isApprovedForAll(address account, address operator) view returns (bool)",
-  "function setApprovalForAll(address operator, bool approved)",
-];
 
 const MIN_TIP_GWEI = ethers.BigNumber.from("30000000000"); // 30 Gwei (some RPCs require ~25 Gwei min)
 const FALLBACK_MAX_FEE_GWEI = ethers.BigNumber.from("250000000000"); // 250 Gwei if chain fee unknown
